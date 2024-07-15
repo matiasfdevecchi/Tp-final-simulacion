@@ -1,5 +1,9 @@
 import getAdquiredUsers from "./fdps/adquired_users";
 import getLeftUsers from "./fdps/left_users"; // nuevo
+import getMeanGames from "./fdps/mean_games";
+import getMeanRounds from "./fdps/mean_rounds";
+import usersWhoLeftByAds from "./fdps/users_who_left_by_ads";
+import getUsersWhoPlayed from "./fdps/users_who_played";
 
 export class Simulation {
   private currentTime: number = 1;
@@ -13,11 +17,9 @@ export class Simulation {
   run() {
     for (let step = 0; step < this.totalTime; step++) {
       this.update();
-      if (step % 10000 === 0) {
-        console.log("**********************************************");
-        console.log(`Partial results at time: ${this.currentTime}`);
-        this.printResults();
-        console.log("**********************************************");
+      const progress = this.currentTime / this.totalTime * 100;
+      if (progress % 10 === 0) {
+        console.log(`Progress: ${progress}%`);
       }
       this.currentTime += this.deltaTime;
     }
@@ -46,40 +48,27 @@ export class Simulation {
   }
 
   private getUsersWhoPlayed() {
-    const users = Math.floor(this.users * Math.random());
-    if (users > this.users) {
-      return this.users;
-    } else if (users < 0) {
-      return 0;
-    } else {
-      return users;
-    }
+    return getUsersWhoPlayed(this.dayOfYear(), this.users);
   }
 
   private updateLeftUsersByAds(usersWhoPlayed: number): number {
-    let usersWhoLeft = Math.floor(usersWhoPlayed * this.adsBetweenRounds / this.roundMean() * Math.random());
-    if (usersWhoLeft > usersWhoPlayed) {
-      usersWhoLeft = usersWhoPlayed;
-    }
+    const usersWhoLeft = usersWhoLeftByAds(usersWhoPlayed, this.adsBetweenRounds);
     this.users -= usersWhoLeft;
     return usersWhoLeft;
   }
 
-  private roundMean() {
-    return 25;
-  }
-
   private calculateBenefits(usersWhoPlayedAndDontLeft: number) {
-    const noErrorPercentage = 1 - this.partnerError();
-    this.benefits += usersWhoPlayedAndDontLeft / 1000 * this.partnerEcpm() * noErrorPercentage;
+    const shownAdsByUser = getMeanGames(usersWhoPlayedAndDontLeft) * getMeanRounds();
+    const successFactor = 1 - this.partnerError();
+    this.benefits += shownAdsByUser / 1000 * this.partnerEcpm() * successFactor;
   }
 
   private partnerEcpm() {
     switch (this.partnerNumber) {
       case 1:
-        return 6;
+        return 4 + Math.random() * (4.5 - 4);
       case 2:
-        return 5;
+        return 5.25 + Math.random() * (5.5 - 5.25);
       default:
         throw new Error("Invalid partner number");
     }
@@ -88,9 +77,9 @@ export class Simulation {
   private partnerError() {
     switch (this.partnerNumber) {
       case 1:
-        return 0.05;
+        return 0.02 + Math.random() * (0.03 - 0.02);
       case 2:
-        return 0.06;
+        return 0.04 + Math.random() * (0.05 - 0.04);
       default:
         throw new Error("Invalid partner number");
     }
@@ -99,7 +88,7 @@ export class Simulation {
   private printResults() {
     console.log(`Total time: ${this.totalTime}`);
     console.log(`Total users: ${this.users}`);
-    console.log(`Total benefits: ${this.benefits}`);
+    console.log(`Total benefits / month: ${this.benefits / this.currentTime * 30}`);
   }
 
   private dayOfYear() {

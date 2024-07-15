@@ -18,7 +18,7 @@ if (isNaN(PARTNER_NUMBER) || isNaN(CANT_RONDAS_ENTRE_ANUNCIOS)) {
 console.log(`Partner n°: ${PARTNER_NUMBER}`);
 console.log(`Cantidad de anuncios: ${CANT_RONDAS_ENTRE_ANUNCIOS}`);
 
-const totalTime = 50000;
+const totalTime = 50000000;
 
 const simulation = new Simulation(totalTime, CANT_RONDAS_ENTRE_ANUNCIOS, PARTNER_NUMBER);
 simulation.run();
